@@ -1,5 +1,7 @@
 # CSC 7103 - Programming Assignment
 
+In order for the client program to be able to connect to the server from our computers, I changed the server IP address to the public IPV4 address of the classes server: 96.125.115.212
+
 To execute the server, run `./run_server.sh`.
 
 To execute the client, run `./run_client.sh`.
