@@ -2,7 +2,7 @@
 
 int main()
 {
-    FileSystemClient* client = new FileSystemClient(std::string("127.0.0.1"), 8000);
+    FileSystemClient* client = new FileSystemClient(std::string("96.125.115.212"), 8000);
     client->start();
     return 0;
 }
