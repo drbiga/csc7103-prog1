@@ -110,7 +110,7 @@ bool FileSystemClient::serverAskedForFile(std::string response)
 
 void FileSystemClient::uploadFile(std::string filename)
 {
-    std::ifstream file(filename, std::ios::in);
+    std::ifstream file(filename, std::ios::binary);
     this->conn->sendPayload(&file);
 }
 

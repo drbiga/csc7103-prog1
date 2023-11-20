@@ -90,6 +90,8 @@ void FileSystemServer::saveFile(std::string filename)
 
 void FileSystemServer::sendFile(std::string filename)
 {
-    std::ifstream file(filename, std::ios::in);
+    std::ifstream file(filename, std::ios::binary);
+    std::ifstream filesizeaux(filename, std::ios::binary | std::ios::ate);
+    std::cout << "\tFile Size: " << filesizeaux.tellg() << std::endl;
     this->conn->sendPayload(&file);
 }

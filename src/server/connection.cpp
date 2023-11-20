@@ -96,22 +96,26 @@ void ServerConnection::sendResult(std::string result)
 void ServerConnection::receivePayload(std::string filename)
 {
     std::cout << "\tReceive Payload:\n";
-    char buffer[PAYLOAD_CHUNK_SIZE];
-    std::ofstream file(filename);
+    std::ofstream file(filename, std::ios::binary);
     std::cout << "\tFile opened\n";
-    bool done = false;
-    while(!done)
+
+    // Receiving file size from client.
+    long payload_size;
+    read(this->open_socket, &payload_size, sizeof(payload_size));
+    payload_size = ntohl(payload_size);
+
+    char buffer[PAYLOAD_CHUNK_SIZE];
+    memset(buffer, 0, PAYLOAD_CHUNK_SIZE);
+    std::cout << "Receiving " << payload_size << " bytes\n";
+    while(payload_size > 0)
     {
-        memset(buffer, 0, PAYLOAD_CHUNK_SIZE);
         ssize_t size = read(this->open_socket, buffer, PAYLOAD_CHUNK_SIZE);
-        if (std::string(buffer) == EOF_PAYLOAD)
-            done = true;
-        else
-        {
-            std::cout << "Writing " << buffer << std::endl;
-            file << buffer << std::endl;
-            std::cout << "Size: " << size << std::endl;
-        }
+        if (size == 0)
+            break;
+        std::cout << "Writing " << size << " bytes\n";
+        std::cout << "ssize_t: " << size << " // int: " << (int) size << std::endl;
+        payload_size -= (long) size;
+        file.write(buffer, size);
     }
     std::cout << "Done writing file\n";
 
@@ -122,15 +126,29 @@ void ServerConnection::sendPayload(std::ifstream* payload)
 {
     if (payload->is_open())
     {
+        // Sending file size to the server
+        std::streampos begin = payload->tellg();
+        payload->seekg(0, std::ios::end);
+        std::streampos end = payload->tellg();
+        long size = end - begin;
+        long transformed_size = htonl(size);
+        std::cout << "Sending file with size " << size << std::endl;
+        send(this->open_socket, &transformed_size, sizeof(transformed_size), 0);
+
         char chunk[PAYLOAD_CHUNK_SIZE];
         memset(chunk, 0, PAYLOAD_CHUNK_SIZE);
+        // Resetting file to the beggining.
+        payload->seekg(0, std::ios::beg);
         std::cout << "File is open\n";
-        while (payload->getline(chunk, PAYLOAD_CHUNK_SIZE))
+        while (size > 0)
         {
-            std::cout << "Sending chunk: " << chunk;
+            payload->read(chunk, PAYLOAD_CHUNK_SIZE);
+
+            // std::cout << "Sending chunk: " << chunk << std::endl;
+            std::cout << size - payload->gcount() << " bytes remaining\n";
             send(this->open_socket, chunk, PAYLOAD_CHUNK_SIZE, 0);
+            size -= PAYLOAD_CHUNK_SIZE;
         }
-        send(this->open_socket, EOF_PAYLOAD, sizeof EOF_PAYLOAD, 0);
         payload->close();
     }
     else
